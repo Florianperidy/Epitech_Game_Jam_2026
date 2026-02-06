@@ -1,0 +1,57 @@
+@keyframes login-freeze {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  15% {
+    transform: translate3d(2px, -1.5px, 0);
+  }
+  18% {
+    transform: translate3d(2px, -1.5px, 0);
+  }
+  19% {
+    transform: translate3d(0, 0, 0);
+  }
+  36% {
+    transform: translate3d(-2px, 2px, 0);
+  }
+  39% {
+    transform: translate3d(-2px, 2px, 0);
+  }
+  40% {
+    transform: translate3d(0, 0, 0);
+  }
+  58% {
+    transform: translate3d(1.5px, 2px, 0);
+  }
+  62% {
+    transform: translate3d(1.5px, 2px, 0);
+  }
+  63% {
+    transform: translate3d(0, 0, 0);
+  }
+  81% {
+    transform: translate3d(-1.5px, -2px, 0);
+  }
+  85% {
+    transform: translate3d(-1.5px, -2px, 0);
+  }
+  86% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.loginFreeze {
+  animation: login-freeze 6.2s steps(1, end) infinite;
+  will-change: transform;
+}
+
+.catchButton {
+  transition: transform 220ms ease;
+}
+
+.catchReady {
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25), 0 12px 30px -20px rgba(16, 185, 129, 0.6);
+}

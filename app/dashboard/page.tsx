@@ -20,7 +20,7 @@ interface Portfolio {
 interface Transaction {
   type: string;
   asset: string;
-  amount: number;
+  amount: string;
   date: string;
   status: string;
   description?: string;
@@ -31,6 +31,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [livePrices, setLivePrices] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +42,9 @@ export default function DashboardPage() {
   }, [status, router]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    if (status !== "authenticated") return;
+
+    const fetchUserData = async () => {
       try {
         const [portfolioRes, transactionsRes] = await Promise.all([
           fetch("/api/portfolio"),
@@ -60,13 +63,7 @@ export default function DashboardPage() {
           transactionsData.map((tx: any) => ({
             type: tx.description || (tx.type === "deposit" ? "Dépôt" : tx.type === "buy" ? "Achat" : tx.type === "sell" ? "Vente" : tx.type),
             asset: tx.asset,
-            amount: tx.type === "deposit" ? `+${tx.amount.toLocaleString("fr-FR", {
-              minimumFractionDigits: 2,
-            })}` : tx.type === "buy" ? `+${tx.amount.toLocaleString("fr-FR", {
-              minimumFractionDigits: 5,
-            })}` : `-${tx.amount.toLocaleString("fr-FR", {
-              minimumFractionDigits: 5,
-            })}`,
+            amount: tx.type === "deposit" ? `+${tx.amount.toLocaleString("fr-FR", { minimumFractionDigits: 2 })}` : tx.type === "buy" ? `+${tx.amount.toLocaleString("fr-FR", { minimumFractionDigits: 5 })}` : `-${tx.amount.toLocaleString("fr-FR", { minimumFractionDigits: 5 })}`,
             date: new Date(tx.date).toLocaleDateString(),
             status: tx.status,
             description: tx.description,
@@ -79,9 +76,23 @@ export default function DashboardPage() {
       }
     };
 
-    if (status === "authenticated") {
-      fetchData();
-    }
+    const fetchPrices = async () => {
+      try {
+        const res = await fetch("/api/prices");
+        if (res.ok) {
+          const prices = await res.json();
+          setLivePrices(prices);
+        }
+      } catch (e) {
+        console.error("Market data glitch");
+      }
+    };
+
+    fetchUserData();
+    fetchPrices();
+
+    const priceInterval = setInterval(fetchPrices, 3000);
+    return () => clearInterval(priceInterval);
   }, [status]);
 
   if (status === "loading" || loading) {
@@ -103,30 +114,28 @@ export default function DashboardPage() {
   const eurAsset = portfolio.assets.find((a) => a.symbol === "EUR");
   const eurBalance = eurAsset?.amount || 0;
 
-  const priceTable: Record<string, number> = {
-    BTC: 69420,
-    ETH: 3512,
-    SOL: 145,
-    GLITCH: 1,
-  };
-
   const assets = portfolio.assets.map((asset) => {
     const isEur = asset.symbol === "EUR";
-    const price = priceTable[asset.symbol] || 0;
-    const valueNumber = isEur ? eurBalance : asset.symbol === "GLITCH" ? NaN : asset.amount * price;
+    const currentPrice = livePrices[asset.symbol] || 0;
+
+    let valueNumber = 0;
+    if (isEur) {
+      valueNumber = eurBalance;
+    } else {
+      valueNumber = asset.amount * currentPrice;
+    }
 
     return {
       ...asset,
-      amount: isEur ? eurBalance.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) : asset.amount.toLocaleString("fr-FR", { minimumFractionDigits: 5 }),
-      value: isEur ? eurBalance.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) : asset.symbol === "GLITCH" ? "ERR_NULL" : valueNumber.toLocaleString("fr-FR", { minimumFractionDigits: 2 }),
-      change: "0.00%",
-      isPositive: true,
+      amountDisplay: isEur ? eurBalance.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) : asset.amount.toLocaleString("fr-FR", { minimumFractionDigits: 5 }),
+      valueDisplay: isEur ? eurBalance.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) : asset.symbol === "GLITCH" ? "ERR_NULL" : valueNumber.toLocaleString("fr-FR", { minimumFractionDigits: 2 }),
       valueNumber,
+      isPositive: true,
     };
   });
 
   const totalBalance = assets.reduce((sum, asset) => {
-    if (typeof asset.valueNumber === "number" && Number.isFinite(asset.valueNumber)) {
+    if (typeof asset.valueNumber === "number" && !Number.isNaN(asset.valueNumber)) {
       return sum + asset.valueNumber;
     }
     return sum;
@@ -143,57 +152,54 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6 font-sans">
       <div className="max-w-7xl mx-auto">
-
         <header className="flex items-center justify-between mb-8">
-            <Link href="/exchange/btc" className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300">
-                <span className="text-slate-400 group-hover:text-white transition-colors">←</span>
-                <span className="text-sm font-semibold text-slate-300 group-hover:text-white">Retour à l'Exchange</span>
-            </Link>
-            <div className="text-right">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <h1 className="text-2xl font-bold">Mon Portefeuille</h1>
-                    <p className="text-xs text-slate-500 font-mono">{session?.user?.email}</p>
-                  </div>
-                  <button onClick={() => signOut({ callbackUrl: "/auth/login" })} className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded transition-colors">
-                    Logout
-                  </button>
-                </div>
+          <Link href="/exchange/btc" className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300">
+            <span className="text-slate-400 group-hover:text-white transition-colors">←</span>
+            <span className="text-sm font-semibold text-slate-300 group-hover:text-white">Retour à l'Exchange</span>
+          </Link>
+          <div className="text-right">
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-2xl font-bold">Mon Portefeuille</h1>
+                <p className="text-xs text-slate-500 font-mono">{session?.user?.email}</p>
+              </div>
+              <button onClick={() => signOut({ callbackUrl: "/auth/login" })} className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded transition-colors">
+                Logout
+              </button>
             </div>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
           <div className="lg:col-span-2 space-y-6">
-
             <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 relative overflow-hidden backdrop-blur-sm">
               <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <p className="text-slate-400 text-sm mb-1 font-medium">Solde Total Disponible</p>
-                    <div className="flex items-baseline gap-3">
+                  <p className="text-slate-400 text-sm mb-1 font-medium">Solde Total Disponible</p>
+                  <div className="flex items-baseline gap-3">
                     <h1 className="text-5xl font-bold tracking-tight text-white">
-                        {totalBalance.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}
+                      {totalBalance.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}
                     </h1>
                     <span className="text-slate-500 font-medium text-xl">€</span>
-                    </div>
-                    <div className="mt-2 flex items-center space-x-2">
-                        <span className="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-1 rounded font-mono font-bold border border-emerald-500/20">
-                            Prêt à jouer
-                        </span>
-                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center space-x-2">
+                    <span className="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-1 rounded font-mono font-bold border border-emerald-500/20">
+                      Prêt à jouer
+                    </span>
+                  </div>
                 </div>
 
                 <div className="h-full min-h-[100px] flex items-center justify-end opacity-90">
-                    <svg viewBox="0 0 200 60" className="w-full h-full text-emerald-500 overflow-visible" fill="none" stroke="currentColor" strokeWidth="3">
-                        <defs>
-                            <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
-                                <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-                            </linearGradient>
-                        </defs>
-                        <path d="M0 55 L 20 55 L 40 55 L 200 55" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5,5" opacity="0.5"/>
-                        <path d="M0 55 L 200 55" fill="url(#gradient)" stroke="none" />
-                    </svg>
+                  <svg viewBox="0 0 200 60" className="w-full h-full text-emerald-500 overflow-visible" fill="none" stroke="currentColor" strokeWidth="3">
+                    <defs>
+                      <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
+                        <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M0 55 L 20 55 L 40 55 L 200 55" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5,5" opacity="0.5"/>
+                    <path d="M0 55 L 200 55" fill="url(#gradient)" stroke="none" />
+                  </svg>
                 </div>
               </div>
 
@@ -221,9 +227,9 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                            <p className="font-bold text-white">{asset.symbol}</p>
-                            {asset.isGlitch && <span className="text-[10px] bg-red-500 text-white px-1 rounded">BUG</span>}
-                            {asset.isFiat && <span className="text-[10px] bg-slate-700 text-slate-300 px-1 rounded">FIAT</span>}
+                          <p className="font-bold text-white">{asset.symbol}</p>
+                          {asset.isGlitch && <span className="text-[10px] bg-red-500 text-white px-1 rounded">BUG</span>}
+                          {asset.isFiat && <span className="text-[10px] bg-slate-700 text-slate-300 px-1 rounded">FIAT</span>}
                         </div>
                         <p className="text-xs text-slate-400">{asset.name}</p>
                       </div>
@@ -231,10 +237,10 @@ export default function DashboardPage() {
 
                     <div className="text-right">
                       <p className={`font-bold font-mono ${asset.isGlitch ? 'text-red-400 blur-[1px]' : 'text-white'}`}>
-                        {asset.value} <span className="text-slate-500 text-xs">€</span>
+                        {asset.valueDisplay} <span className="text-slate-500 text-xs">€</span>
                       </p>
                       <p className={`text-xs font-medium ${asset.isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {asset.amount} {asset.symbol}
+                        {asset.amountDisplay} {asset.symbol}
                       </p>
                     </div>
                   </div>
@@ -254,10 +260,10 @@ export default function DashboardPage() {
                   <div className={`absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full border-2 border-slate-950 ${item.status === 'Completed' ? 'bg-emerald-500' : item.status === 'Processing' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
-                        <p className="text-sm font-medium text-slate-200">{item.type} {item.asset}</p>
-                        <span className={`text-xs font-mono ${String(item.amount).includes('+') ? 'text-emerald-400' : 'text-slate-400'}`}>
-                            {item.amount}
-                        </span>
+                      <p className="text-sm font-medium text-slate-200">{item.type} {item.asset}</p>
+                      <span className={`text-xs font-mono ${String(item.amount).includes('+') ? 'text-emerald-400' : 'text-slate-400'}`}>
+                        {item.amount}
+                      </span>
                     </div>
                     <p className="text-[10px] text-slate-500 mt-1">{item.date}</p>
                   </div>
@@ -265,7 +271,6 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-
         </div>
       </div>
     </div>

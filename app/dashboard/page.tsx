@@ -145,10 +145,16 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto">
 
         <header className="flex items-center justify-between mb-8">
-            <Link href="/exchange/btc" className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300">
-                <span className="text-slate-400 group-hover:text-white transition-colors">←</span>
-                <span className="text-sm font-semibold text-slate-300 group-hover:text-white">Retour à l'Exchange</span>
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/exchange/btc" className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300">
+                  <span className="text-slate-400 group-hover:text-white transition-colors">←</span>
+                  <span className="text-sm font-semibold text-slate-300 group-hover:text-white">Retour à l'Exchange</span>
+              </Link>
+              <Link href="/games" className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300">
+                  <span className="text-slate-400 group-hover:text-white transition-colors">→</span>
+                  <span className="text-sm font-semibold text-slate-300 group-hover:text-white">Games</span>
+              </Link>
+            </div>
             <div className="text-right">
                 <div className="flex items-center gap-3">
                   <div>

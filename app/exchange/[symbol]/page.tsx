@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import ChartContainer from '../components/ChartContainer';
 import OrderForm from '../components/OrderForm';
 import TransactionList from '../components/TransactionList';
@@ -14,9 +15,24 @@ export default function ExchangePage() {
   return (
     <div className="p-4 bg-slate-950 min-h-screen text-white font-mono">
       <div className="max-w-7xl mx-auto">
-        <header className="flex justify-between py-4 border-b border-slate-800 mb-4">
-          <h1 className="text-3xl font-bold uppercase">{symbol}/USD</h1>
-          <div className="text-red-500 animate-pulse text-xs">SYSTEM_STATUS: CORRUPTED</div>
+        <header className="flex items-center justify-between py-4 border-b border-slate-800 mb-4">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-3xl font-bold italic tracking-tighter">
+              {symbol}<span className="text-gray-500">/USD</span>
+            </h1>
+          </div>
+          <div className="flex items-center space-x-6">
+            <div className="text-sm text-red-500 animate-pulse font-mono hidden md:block">
+              SYSTEM_STATUS: CORRUPTED
+            </div>
+            <Link href="/dashboard" className="transition-transform hover:scale-110">
+              <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-blue-400 shadow-lg shadow-blue-500/10">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+            </Link>
+          </div>
         </header>
 
         <CryptoSelector current={symbol} />

@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useRef } from 'react';
 import {
   createChart,
@@ -10,43 +9,35 @@ import {
   ISeriesApi
 } from 'lightweight-charts';
 
-const generateBuggyCandlestickData = (count: number): CandlestickData[] => {
+const generateBuggyData = (count: number, symbol: string): CandlestickData[] => {
   const data: CandlestickData[] = [];
-  let lastClose = 60000;
+  let lastClose = symbol === "eth" ? 3500 : symbol === "sol" ? 145 : 60000;
+  if (symbol === "glitch") lastClose = 10;
+
   const currentTime = new Date(Date.now() - count * 24 * 60 * 60 * 1000);
 
   for (let i = 0; i < count; i++) {
     const open = lastClose * (1 + (Math.random() - 0.5) * 0.02);
     const close = open * (1 + (Math.random() - 0.5) * 0.03);
-    const high = Math.max(open, close) * (1 + Math.random() * 0.01);
-    const low = Math.min(open, close) * (1 - Math.random() * 0.01);
-
-    const timeString = currentTime.toISOString().split('T')[0];
-
     data.push({
-      time: timeString,
+      time: currentTime.toISOString().split('T')[0] as any,
       open,
-      high,
-      low,
+      high: Math.max(open, close) * 1.01,
+      low: Math.min(open, close) * 0.99,
       close,
     });
-
     lastClose = close;
     currentTime.setDate(currentTime.getDate() + 1);
   }
   return data;
 };
 
-export default function ChartContainer() {
+export default function ChartContainer({ symbol }: { symbol: string }) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-
-  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  const chartRef = useRef<IChartApi | null>(null);
+  const chartInstanceRef = useRef<IChartApi | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
-
-    const initialData = generateBuggyCandlestickData(100);
 
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
@@ -61,7 +52,7 @@ export default function ChartContainer() {
       },
     });
 
-    const candlestickSeries = chart.addSeries(CandlestickSeries, {
+    const series = chart.addSeries(CandlestickSeries, {
       upColor: '#22c55e',
       downColor: '#ef4444',
       borderVisible: false,
@@ -69,38 +60,29 @@ export default function ChartContainer() {
       wickDownColor: '#ef4444',
     });
 
-    candlestickSeries.setData(initialData);
-    seriesRef.current = candlestickSeries;
-    chartRef.current = chart;
+    const data = generateBuggyData(100, symbol);
+    series.setData(data);
+
+    chartInstanceRef.current = chart;
 
     const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
+      if (chartContainerRef.current && chartInstanceRef.current) {
+        chartInstanceRef.current.applyOptions({
+          width: chartContainerRef.current.clientWidth
+        });
       }
     };
 
     window.addEventListener('resize', handleResize);
 
-    const interval = setInterval(() => {
-      if (seriesRef.current) {
-        const lastData = initialData[initialData.length - 1];
-        const newData: CandlestickData = {
-            time: new Date().toISOString().split('T')[0],
-            open: lastData.close,
-            high: lastData.close * 1.02,
-            low: lastData.close * 0.98,
-            close: lastData.close * (Math.random() > 0.5 ? 1.01 : 0.99),
-        };
-        seriesRef.current.update(newData);
-      }
-    }, 3000);
-
     return () => {
       window.removeEventListener('resize', handleResize);
-      chart.remove();
-      clearInterval(interval);
+      if (chartInstanceRef.current) {
+        chartInstanceRef.current.remove();
+        chartInstanceRef.current = null;
+      }
     };
-  }, []);
+  }, [symbol]);
 
   return (
     <div

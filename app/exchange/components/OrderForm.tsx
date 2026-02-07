@@ -40,7 +40,6 @@ export default function OrderForm({ symbol = 'BTC' }: OrderFormProps) {
         setLastSuccess(data.message || `Order successful!`);
         setAmount('0.00');
 
-        // Reload page after 2 seconds to show updated portfolio
         setTimeout(() => {
           window.location.reload();
         }, 2000);

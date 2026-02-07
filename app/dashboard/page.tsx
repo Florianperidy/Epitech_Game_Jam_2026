@@ -153,21 +153,27 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-slate-950 text-white p-6 font-sans">
       <div className="max-w-7xl mx-auto">
         <header className="flex items-center justify-between mb-8">
-          <Link href="/exchange/btc" className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300">
-            <span className="text-slate-400 group-hover:text-white transition-colors">←</span>
-            <span className="text-sm font-semibold text-slate-300 group-hover:text-white">Retour à l'Exchange</span>
-          </Link>
-          <div className="text-right">
             <div className="flex items-center gap-3">
-              <div>
-                <h1 className="text-2xl font-bold">Mon Portefeuille</h1>
-                <p className="text-xs text-slate-500 font-mono">{session?.user?.email}</p>
-              </div>
-              <button onClick={() => signOut({ callbackUrl: "/auth/login" })} className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded transition-colors">
-                Logout
-              </button>
+              <Link href="/exchange/btc" className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300">
+                  <span className="text-slate-400 group-hover:text-white transition-colors">←</span>
+                  <span className="text-sm font-semibold text-slate-300 group-hover:text-white">Retour à l'Exchange</span>
+              </Link>
+              <Link href="/games" className="group flex items-center space-x-2 px-4 py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300">
+                  <span className="text-slate-400 group-hover:text-white transition-colors">→</span>
+                  <span className="text-sm font-semibold text-slate-300 group-hover:text-white">Games</span>
+              </Link>
             </div>
-          </div>
+            <div className="text-right">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h1 className="text-2xl font-bold">Mon Portefeuille</h1>
+                    <p className="text-xs text-slate-500 font-mono">{session?.user?.email}</p>
+                  </div>
+                  <button onClick={() => signOut({ callbackUrl: "/auth/login" })} className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded transition-colors">
+                    Logout
+                  </button>
+                </div>
+            </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

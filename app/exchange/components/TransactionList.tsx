@@ -32,7 +32,6 @@ export default function TransactionList() {
 
     fetchTransactions();
 
-    // Refresh transactions every 5 seconds
     const interval = setInterval(fetchTransactions, 5000);
     return () => clearInterval(interval);
   }, []);

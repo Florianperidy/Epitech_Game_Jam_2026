@@ -1,16 +1,34 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import BugConsole from '../components/BugConsole';
 import ChartContainer from '../components/ChartContainer';
+import CryptoSelector from '../components/CryptoSelector';
 import OrderForm from '../components/OrderForm';
 import TransactionList from '../components/TransactionList';
-import BugConsole from '../components/BugConsole';
-import CryptoSelector from '../components/CryptoSelector';
 
 export default function ExchangePage() {
   const params = useParams();
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const symbol = (params.symbol as string) || "btc";
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/login");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white p-6 flex items-center justify-center">
+        <p className="text-slate-400">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 bg-slate-950 min-h-screen text-white font-mono">
@@ -32,6 +50,12 @@ export default function ExchangePage() {
                 </svg>
               </div>
             </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: "/auth/login" })}
+              className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded transition-colors"
+            >
+              Logout
+            </button>
           </div>
         </header>
 
@@ -45,7 +69,7 @@ export default function ExchangePage() {
             </div>
           </div>
           <div className="md:col-span-1 space-y-6">
-            <OrderForm />
+            <OrderForm symbol={symbol} />
             <TransactionList />
             <BugConsole />
           </div>

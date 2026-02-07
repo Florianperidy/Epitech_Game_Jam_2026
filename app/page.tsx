@@ -1,15 +1,13 @@
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
-  const isLoggedIn = Boolean(session?.user);
 
-  return (
-    <main className="min-h-screen flex items-center justify-center">
-      <p className="text-base">
-        {isLoggedIn ? "You are logged in." : "You are not logged in."}
-      </p>
-    </main>
-  );
+  if (session?.user) {
+    redirect("/dashboard");
+  } else {
+    redirect("/auth/login");
+  }
 }

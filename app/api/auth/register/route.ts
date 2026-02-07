@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const passwordHash = await hash(password, 12);
     const now = new Date();
 
-    await users.insertOne({
+    const userDoc = {
       email,
       passwordHash,
       name: null,
@@ -47,6 +47,61 @@ export async function POST(request: Request) {
       emailVerified: null,
       createdAt: now,
       updatedAt: now,
+    };
+
+    const userResult = await users.insertOne(userDoc);
+    const userId = userResult.insertedId;
+
+    const portfolios = client.db().collection("portfolios");
+    await portfolios.insertOne({
+      userId: userId.toString(),
+      email,
+      createdAt: now,
+      updatedAt: now,
+      assets: [
+        {
+          symbol: "EUR",
+          name: "Euro",
+          amount: 10000,
+          isFiat: true,
+        },
+        {
+          symbol: "BTC",
+          name: "Bitcoin",
+          amount: 0,
+          isFiat: false,
+        },
+        {
+          symbol: "ETH",
+          name: "Ethereum",
+          amount: 0,
+          isFiat: false,
+        },
+        {
+          symbol: "SOL",
+          name: "Solana",
+          amount: 0,
+          isFiat: false,
+        },
+        {
+          symbol: "GLITCH",
+          name: "GlitchCoin",
+          amount: 0,
+          isFiat: false,
+          isGlitch: true,
+        },
+      ],
+    });
+
+    const transactions = client.db().collection("transactions");
+    await transactions.insertOne({
+      userId: userId.toString(),
+      type: "deposit",
+      asset: "EUR",
+      amount: 10000,
+      date: now,
+      status: "Completed",
+      description: "Dépôt Initial",
     });
 
     return NextResponse.json({

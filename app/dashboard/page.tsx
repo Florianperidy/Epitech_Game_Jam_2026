@@ -1,37 +1,49 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 export default function DashboardPage() {
+  const [balance, setBalance] = useState(10000);
+
   const assets = [
+    {
+        name: "Euro",
+        symbol: "EUR",
+        amount: balance.toLocaleString('fr-FR', { minimumFractionDigits: 2 }),
+        value: balance.toLocaleString('fr-FR', { minimumFractionDigits: 2 }),
+        change: "0.00%",
+        isPositive: true,
+        isFiat: true
+    },
     {
         name: "Bitcoin",
         symbol: "BTC",
-        amount: "0.42069",
-        value: "29,150.42",
-        change: "+2.4%",
+        amount: "0.00000",
+        value: "0.00",
+        change: "0.00%",
         isPositive: true
     },
     {
         name: "Ethereum",
         symbol: "ETH",
-        amount: "4.5",
-        value: "15,800.10",
-        change: "-1.2%",
-        isPositive: false
+        amount: "0.0000",
+        value: "0.00",
+        change: "0.00%",
+        isPositive: true
     },
     {
         name: "Solana",
         symbol: "SOL",
-        amount: "145.0",
-        value: "21,025.00",
-        change: "+5.7%",
+        amount: "0.00",
+        value: "0.00",
+        change: "0.00%",
         isPositive: true
     },
     {
         name: "GlitchCoin",
         symbol: "GLITCH",
-        amount: "999999.0",
+        amount: "0.00",
         value: "ERR_NULL",
         change: "???",
         isPositive: false,
@@ -40,15 +52,13 @@ export default function DashboardPage() {
   ];
 
   const history = [
-      { type: "Deposit", asset: "BTC", amount: "+0.0500", date: "2024-05-20 14:30", status: "Completed" },
-      { type: "Trade", asset: "ETH", amount: "-1.2000", date: "2024-05-19 09:15", status: "Completed" },
-      { type: "Withdraw", asset: "SOL", amount: "-10.000", date: "2024-05-18 18:45", status: "Processing" },
-      { type: "Glitch", asset: "GLITCH", amount: "INF", date: "1970-01-01 00:00", status: "Failed", isGlitch: true },
+      { type: "Dépôt Initial", asset: "EUR", amount: "+10 000.00", date: new Date().toLocaleDateString(), status: "Completed" },
   ];
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6 font-sans">
       <div className="max-w-7xl mx-auto">
+
         <header className="flex items-center justify-between mb-8">
             <Link
                 href="/exchange/btc"
@@ -59,7 +69,7 @@ export default function DashboardPage() {
             </Link>
             <div className="text-right">
                 <h1 className="text-2xl font-bold">Mon Portefeuille</h1>
-                <p className="text-xs text-slate-500 font-mono">ID: 0xDEAD...BEEF</p>
+                <p className="text-xs text-slate-500 font-mono">JOUEUR_ID: 0xSTART_10K</p>
             </div>
         </header>
 
@@ -70,16 +80,17 @@ export default function DashboardPage() {
             <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 relative overflow-hidden backdrop-blur-sm">
               <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <p className="text-slate-400 text-sm mb-1 font-medium">Solde Total Estimé</p>
+                    <p className="text-slate-400 text-sm mb-1 font-medium">Solde Total Disponible</p>
                     <div className="flex items-baseline gap-3">
-                    <h1 className="text-5xl font-bold tracking-tight text-white">65,975.52</h1>
-                    <span className="text-slate-500 font-medium text-xl">USD</span>
+                    <h1 className="text-5xl font-bold tracking-tight text-white">
+                        {balance.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}
+                    </h1>
+                    <span className="text-slate-500 font-medium text-xl">€</span>
                     </div>
                     <div className="mt-2 flex items-center space-x-2">
                         <span className="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-1 rounded font-mono font-bold border border-emerald-500/20">
-                            +$1,240.50 (2.1%)
+                            Prêt à jouer
                         </span>
-                        <span className="text-slate-500 text-xs">Aujourd'hui</span>
                     </div>
                 </div>
 
@@ -91,15 +102,15 @@ export default function DashboardPage() {
                                 <stop offset="100%" stopColor="transparent" stopOpacity="0" />
                             </linearGradient>
                         </defs>
-                        <path d="M0 45 C 40 40, 60 55, 90 35 S 150 10, 200 5" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M0 45 C 40 40, 60 55, 90 35 S 150 10, 200 5 L 200 60 L 0 60 Z" fill="url(#gradient)" stroke="none" />
+                        <path d="M0 55 L 20 55 L 40 55 L 200 55" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5,5" opacity="0.5"/>
+                        <path d="M0 55 L 200 55" fill="url(#gradient)" stroke="none" />
                     </svg>
                 </div>
               </div>
 
               <div className="relative z-10 flex gap-3 mt-8">
                 <button className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-bold text-sm transition-all shadow-lg shadow-blue-900/20">
-                  Déposer
+                  Ajouter des Fonds (Bug)
                 </button>
                 <button className="flex-1 bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-lg font-bold text-sm border border-slate-700 transition-all">
                   Retirer
@@ -117,17 +128,19 @@ export default function DashboardPage() {
                   <div key={asset.symbol} className={`p-4 flex items-center justify-between hover:bg-slate-800/30 transition-colors cursor-pointer group ${asset.isGlitch ? 'animate-pulse bg-red-900/10' : ''}`}>
                     <div className="flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-inner
+                        ${asset.symbol === 'EUR' ? 'bg-slate-700 text-white border border-slate-600' : ''}
                         ${asset.symbol === 'BTC' ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30' : ''}
                         ${asset.symbol === 'ETH' ? 'bg-blue-500/20 text-blue-500 border border-blue-500/30' : ''}
                         ${asset.symbol === 'SOL' ? 'bg-purple-500/20 text-purple-500 border border-purple-500/30' : ''}
                         ${asset.symbol === 'GLITCH' ? 'bg-red-500/20 text-red-500 border border-red-500/30 font-mono' : ''}
                       `}>
-                        {asset.symbol[0]}
+                        {asset.symbol === 'EUR' ? '€' : asset.symbol[0]}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                             <p className="font-bold text-white">{asset.symbol}</p>
                             {asset.isGlitch && <span className="text-[10px] bg-red-500 text-white px-1 rounded">BUG</span>}
+                            {asset.isFiat && <span className="text-[10px] bg-slate-700 text-slate-300 px-1 rounded">FIAT</span>}
                         </div>
                         <p className="text-xs text-slate-400">{asset.name}</p>
                       </div>
@@ -135,7 +148,7 @@ export default function DashboardPage() {
 
                     <div className="text-right">
                       <p className={`font-bold font-mono ${asset.isGlitch ? 'text-red-400 blur-[1px]' : 'text-white'}`}>
-                        {asset.value} <span className="text-slate-500 text-xs">$</span>
+                        {asset.value} <span className="text-slate-500 text-xs">€</span>
                       </p>
                       <p className={`text-xs font-medium ${asset.isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {asset.amount} {asset.symbol}
@@ -155,14 +168,14 @@ export default function DashboardPage() {
             <div className="p-4 space-y-4">
               {history.map((item, i) => (
                 <div key={i} className="flex items-start gap-3 relative pb-4 border-l border-slate-800 pl-4 last:pb-0 last:border-0">
-                  <div className={`absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full border-2 border-slate-950
+                  <div className={`absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full border-2 border-slate-950 
                     ${item.status === 'Completed' ? 'bg-emerald-500' : item.status === 'Processing' ? 'bg-yellow-500' : 'bg-red-500'}
                   `}></div>
 
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
                         <p className="text-sm font-medium text-slate-200">{item.type} {item.asset}</p>
-                        <span className={`text-xs font-mono ${item.type === 'Deposit' ? 'text-emerald-400' : 'text-slate-400'}`}>
+                        <span className={`text-xs font-mono ${item.amount.includes('+') ? 'text-emerald-400' : 'text-slate-400'}`}>
                             {item.amount}
                         </span>
                     </div>
@@ -170,10 +183,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ))}
-
-              <button className="w-full mt-2 py-2 text-xs text-slate-500 hover:text-white border border-dashed border-slate-800 hover:border-slate-600 rounded transition-all">
-                Voir tout l'historique
-              </button>
             </div>
           </div>
 

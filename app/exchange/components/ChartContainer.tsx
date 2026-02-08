@@ -3,38 +3,16 @@ import { useEffect, useRef } from 'react';
 import {
   createChart,
   ColorType,
-  CandlestickData,
   IChartApi,
   CandlestickSeries,
   ISeriesApi
 } from 'lightweight-charts';
 
-const generateBuggyData = (count: number, symbol: string): CandlestickData[] => {
-  const data: CandlestickData[] = [];
-  let lastClose = symbol === "eth" ? 3500 : symbol === "sol" ? 145 : 60000;
-  if (symbol === "glitch") lastClose = 10;
-
-  const currentTime = new Date(Date.now() - count * 24 * 60 * 60 * 1000);
-
-  for (let i = 0; i < count; i++) {
-    const open = lastClose * (1 + (Math.random() - 0.5) * 0.02);
-    const close = open * (1 + (Math.random() - 0.5) * 0.03);
-    data.push({
-      time: currentTime.toISOString().split('T')[0] as any,
-      open,
-      high: Math.max(open, close) * 1.01,
-      low: Math.min(open, close) * 0.99,
-      close,
-    });
-    lastClose = close;
-    currentTime.setDate(currentTime.getDate() + 1);
-  }
-  return data;
-};
-
 export default function ChartContainer({ symbol }: { symbol: string }) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const lastPriceRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -50,6 +28,10 @@ export default function ChartContainer({ symbol }: { symbol: string }) {
         vertLines: { color: '#1e293b' },
         horzLines: { color: '#1e293b' },
       },
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+      },
     });
 
     const series = chart.addSeries(CandlestickSeries, {
@@ -60,10 +42,22 @@ export default function ChartContainer({ symbol }: { symbol: string }) {
       wickDownColor: '#ef4444',
     });
 
-    const data = generateBuggyData(100, symbol);
-    series.setData(data);
-
+    seriesRef.current = series;
     chartInstanceRef.current = chart;
+
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch(`/api/history?symbol=${symbol}`);
+        const data = await res.json();
+        series.setData(data);
+        if (data.length > 0) {
+          lastPriceRef.current = data[data.length - 1].close;
+        }
+      } catch (e) {
+      }
+    };
+
+    fetchHistory();
 
     const handleResize = () => {
       if (chartContainerRef.current && chartInstanceRef.current) {
@@ -77,11 +71,38 @@ export default function ChartContainer({ symbol }: { symbol: string }) {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.remove();
-        chartInstanceRef.current = null;
-      }
+      chart.remove();
     };
+  }, [symbol]);
+
+  useEffect(() => {
+    lastPriceRef.current = null;
+    const interval = setInterval(async () => {
+      if (!seriesRef.current) return;
+
+      try {
+        const res = await fetch("/api/prices");
+        const prices = await res.json();
+        const currentPrice = prices[symbol.toUpperCase()];
+
+        if (currentPrice) {
+            const now = Math.floor(Date.now() / 1000);
+            const open = lastPriceRef.current ?? currentPrice;
+            lastPriceRef.current = currentPrice;
+
+            seriesRef.current.update({
+                time: now as any,
+                open: open,
+                high: Math.max(open, currentPrice) * 1.0001,
+                low: Math.min(open, currentPrice) * 0.9999,
+                close: currentPrice
+            });
+        }
+      } catch (error) {
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, [symbol]);
 
   return (

@@ -2,27 +2,53 @@
 
 import { useState } from 'react';
 
-export default function OrderForm() {
+interface OrderFormProps {
+  symbol?: string;
+}
+
+export default function OrderForm({ symbol = 'BTC' }: OrderFormProps) {
   const [amount, setAmount] = useState<string>('0.00');
   const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
   const [lastError, setLastError] = useState<string | null>(null);
+  const [lastSuccess, setLastSuccess] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLastError(null);
-    if (Math.random() < 0.3) {
-      const bugType = Math.floor(Math.random() * 3);
-      switch (bugType) {
-        case 0: setLastError("ERROR: Transaction ID Conflict (0xABC123). Please retry."); break;
-        case 1: setLastError("WARNING: Funds deducted, but order not placed. Check balance."); break;
-        case 2: setLastError(`CRITICAL: Order placed for ${parseFloat(amount) * 10} BTC! (Amount Multiplier Bug)`); break;
-        default: break;
-      }
-      return;
-    }
+    setLastSuccess(null);
+    setIsSubmitting(true);
 
-    alert(`Order of ${amount} BTC to ${orderType} successful! (Or was it?)`);
-    setAmount('0.00');
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          symbol: symbol.toUpperCase(),
+          amount: parseFloat(amount),
+          orderType,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.hasBug) {
+        setLastError(data.error || 'Order failed');
+      } else {
+        setLastSuccess(data.message || `Order successful!`);
+        setAmount('0.00');
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
+    } catch (error) {
+      setLastError('Network error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -46,14 +72,16 @@ export default function OrderForm() {
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
-          <label htmlFor="amount" className="block text-sm text-gray-400 mb-1">Amount (BTC)</label>
+          <label htmlFor="amount" className="block text-sm text-gray-400 mb-1">Amount ({symbol})</label>
           <input
             type="number"
             id="amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             step="0.01"
-            className="w-full p-2 bg-slate-800 border border-slate-700 rounded-md text-white focus:ring-blue-500 focus:border-blue-500"
+            min="0"
+            disabled={isSubmitting}
+            className="w-full p-2 bg-slate-800 border border-slate-700 rounded-md text-white focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
             placeholder="0.00"
           />
         </div>
@@ -64,13 +92,20 @@ export default function OrderForm() {
           </div>
         )}
 
+        {lastSuccess && (
+          <div className="mb-4 p-3 bg-green-900/50 border border-green-700 text-green-300 rounded-md text-sm">
+            {lastSuccess}
+          </div>
+        )}
+
         <button
           type="submit"
+          disabled={isSubmitting}
           className={`w-full p-3 rounded-md font-bold ${
             orderType === 'buy' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
-          } transition-colors`}
+          } transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
         >
-          {orderType === 'buy' ? 'Execute Buy Order' : 'Execute Sell Order'}
+          {isSubmitting ? 'Processing...' : orderType === 'buy' ? 'Execute Buy Order' : 'Execute Sell Order'}
         </button>
       </form>
     </div>

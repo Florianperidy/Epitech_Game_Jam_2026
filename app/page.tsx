@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import Link from "next/link";
 import Image from "next/image";
 import GlitchCounter from "@/components/GlitchCounter";
-import GlitchCursor from "@/components/GlitchCursor";
 import './globals.css'
 
 export default async function Home() {

@@ -139,16 +139,22 @@ export default async function Home() {
                 title: "Graphiques professionnels",
                 description: "Des outils de dessin avancés et plus de 100 indicateurs techniques",
                 icon: "📊",
+                buttonText: "Découvrir les graphiques",
+                buttonLink: "/info/graphics",
               },
               {
                 title: "Données en temps réel",
                 description: "Accédez aux cotations en direct de tous les marchés mondiaux",
                 icon: "⚡",
+                buttonText: "Voir les données",
+                buttonLink: "/info/data",
               },
               {
                 title: "Alertes personnalisées",
                 description: "Recevez des notifications pour ne manquer aucune opportunité",
                 icon: "🔔",
+                buttonText: "Configurer les alertes",
+                buttonLink: "/info/newsletter",
               },
             ].map((feature, index) => (
               <div
@@ -159,7 +165,13 @@ export default async function Home() {
                 <h3 className="text-2xl font-semibold text-white mb-3">
                   {feature.title}
                 </h3>
-                <p className="text-slate-400">{feature.description}</p>
+                <p className="text-slate-400 mb-4">{feature.description}</p>
+                <Link
+                  href={feature.buttonLink}
+                  className="inline-block px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-blue-600/50 hover:shadow-blue-600/70"
+                >
+                  {feature.buttonText}
+                </Link>
               </div>
             ))}
           </div>
